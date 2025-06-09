@@ -1,4 +1,6 @@
 "use strict";
+
+import { fetchFakerData } from "./functions.js";
 /**
  * Muestra una notificación tipo "toast" en la interfaz.
  * Busca un elemento con el ID "toast-interactive" y, si existe,
@@ -28,7 +30,52 @@ const showVideo = () => {
     }
 };
 
+const renderCards = (dataArray) => {
+  const container = document.getElementById('skeleton-container');
+  container.innerHTML = ''; // Limpiar contenido previo
+
+  dataArray.slice(0, 3).forEach(item => {
+    const card = document.createElement('div');
+    card.className = "bg-white shadow-md rounded-lg p-6 mb-4";
+
+    card.innerHTML = `
+      <h2 class="text-xl font-semibold mb-2">${item.title}</h2>
+      <p class="text-sm text-gray-500 mb-1">Autor: ${item.author}</p>
+      <p class="text-sm text-gray-500 mb-3">Género: ${item.genre}</p>
+      <p class="text-gray-700">${item.content}</p>
+    `;
+
+    container.appendChild(card);
+  });
+};
+
+
+
+
+const loadData = async () => {
+  const url = 'https://fakerapi.it/api/v2/texts?_quantity=10&_characters=120';
+  
+  try {
+    const result = await fetchFakerData(url);
+    if (result.success) {
+      console.log('Datos obtenidos:', result.body);
+      renderCards(result.body.data);
+    } else {
+      console.error('Error:', result.error);
+    }
+  } catch (error) {
+    console.error('Error inesperado:', error.message);
+  }
+};
+
+
+
+
 (() => {
     showToast();
     showVideo();
+    loadData();
 })();
+
+
+
