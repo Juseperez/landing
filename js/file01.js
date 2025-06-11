@@ -1,6 +1,8 @@
 "use strict";
 
 import { fetchFakerData } from "./functions.js";
+
+import { saveVote, getVotes } from './firebase.js';
 /**
  * Muestra una notificación tipo "toast" en la interfaz.
  * Busca un elemento con el ID "toast-interactive" y, si existe,
@@ -68,13 +70,92 @@ const loadData = async () => {
   }
 };
 
+function enableForm() {
+  const form = document.getElementById('form_voting');
 
+  if (!form) {
+    console.error("Formulario con id 'form_voting' no encontrado.");
+    return;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const select = document.getElementById('select_product');
+    if (!select) {
+      console.error("Elemento con id 'select_product' no encontrado.");
+      return;
+    }
+
+    const productID = select.value;
+
+    if (!productID) {
+      console.warn("No se seleccionó ningún producto.");
+      return;
+    }
+
+    try {
+      const result = await saveVote(productID);
+      console.log(result.message);
+      await displayVotes();
+    } catch (error) {
+      console.error("Error al enviar el voto:", error);
+    }
+
+    form.reset(); // Limpia el formulario
+  });
+}
+
+async function displayVotes() {
+  const container = document.getElementById('results');
+
+  if (!container) {
+    console.error("Elemento con id 'results' no encontrado.");
+    return;
+  }
+
+  const votes = await getVotes();
+  container.innerHTML = ''; // Limpiar contenido previo
+
+  if (!votes) {
+    container.textContent = 'No hay votos registrados.';
+    return;
+  }
+
+  // Contar votos por productID
+  const voteCounts = {};
+  Object.values(votes).forEach((vote) => {
+    const productID = vote.productID;
+    voteCounts[productID] = (voteCounts[productID] || 0) + 1;
+  });
+
+  // Crear tabla
+  const table = document.createElement('table');
+  table.border = '1';
+  table.style.borderCollapse = 'collapse';
+  table.style.marginTop = '1rem';
+
+  const header = table.insertRow();
+  header.insertCell().textContent = 'Producto';
+  header.insertCell().textContent = 'Total de Votos';
+
+  // Rellenar filas
+  for (const [productID, count] of Object.entries(voteCounts)) {
+    const row = table.insertRow();
+    row.insertCell().textContent = productID;
+    row.insertCell().textContent = count;
+  }
+
+  container.appendChild(table);
+}
 
 
 (() => {
     showToast();
     showVideo();
     loadData();
+    enableForm();
+    displayVotes();
 })();
 
 
